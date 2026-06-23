@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GLP-1 Dose Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>GLP-1 Dose Tracker</h1>
+    <p class="tagline">Titration schedule + personal dose log</p>
+  </header>
+
+  <main>
+    <!-- Setup -->
+    <section class="card" id="setup">
+      <h2>Set up your plan</h2>
+      <div class="field">
+        <label for="product">Medication</label>
+        <select id="product"></select>
+      </div>
+      <div class="field">
+        <label for="startDate">Start date (first dose)</label>
+        <input type="date" id="startDate" />
+      </div>
+      <button id="buildPlan" class="primary">Build my schedule</button>
+    </section>
+
+    <!-- Current status -->
+    <section class="card hidden" id="status">
+      <h2>Where you are now</h2>
+      <div class="status-grid">
+        <div class="stat">
+          <span class="stat-label">Current dose</span>
+          <span class="stat-value" id="currentDose">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Next dose due</span>
+          <span class="stat-value" id="nextDoseDate">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Next dose amount</span>
+          <span class="stat-value" id="nextDoseAmount">—</span>
+        </div>
+      </div>
+      <button id="logToday" class="primary">+ Log a dose</button>
+    </section>
+
+    <!-- Schedule -->
+    <section class="card hidden" id="scheduleCard">
+      <h2>Titration schedule</h2>
+      <table id="scheduleTable">
+        <thead>
+          <tr><th>Step</th><th>Dose</th><th>Starts</th><th>Notes</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Dose log -->
+    <section class="card hidden" id="logCard">
+      <h2>Dose log</h2>
+      <ul id="logList" class="log-list"></ul>
+      <p id="emptyLog" class="muted">No doses logged yet.</p>
+    </section>
+
+    <p class="disclaimer">
+      ⚠️ <strong>Educational tool only.</strong> Schedules shown are standard
+      manufacturer-labeled escalation patterns for reference. They are not medical
+      advice. Always follow your prescriber's and pharmacist's instructions. Your
+      data is stored only in this browser.
+    </p>
+  </main>
+
+  <!-- Log dose modal -->
+  <div class="modal-backdrop hidden" id="modal">
+    <div class="modal">
+      <h3>Log a dose</h3>
+      <div class="field">
+        <label for="logDate">Date taken</label>
+        <input type="date" id="logDate" />
+      </div>
+      <div class="field">
+        <label for="logDose">Dose (mg)</label>
+        <input type="number" id="logDose" step="0.05" min="0" />
+      </div>
+      <div class="field">
+        <label for="logSite">Injection site (optional)</label>
+        <input type="text" id="logSite" placeholder="e.g. left abdomen" />
+      </div>
+      <div class="field">
+        <label for="logNotes">Notes (optional)</label>
+        <input type="text" id="logNotes" placeholder="e.g. mild nausea" />
+      </div>
+      <div class="modal-actions">
+        <button id="cancelLog" class="ghost">Cancel</button>
+        <button id="saveLog" class="primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
