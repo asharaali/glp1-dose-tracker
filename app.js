@@ -4,8 +4,9 @@ const STORAGE_KEY = "glp1-tracker-v1";
 
 let state = {
   productId: null,
-  startDate: null, // ISO "YYYY-MM-DD"
-  log: [],         // [{ id, date, dose, site, notes }]
+  startStepIndex: 0, // which step of the ladder the user is currently on
+  startDate: null,   // ISO "YYYY-MM-DD" — date of the dose at startStepIndex
+  log: [],           // [{ id, date, dose, site, notes }]
 };
 
 // ---- Helpers ----
@@ -41,18 +42,29 @@ function load() {
 }
 
 // ---- Core: build the dated schedule ----
-// Walks the product's steps from the start date, assigning each step a
-// start date. Weekly drugs advance N*7 days per step; daily drugs N days.
-function buildSchedule(product, startDate) {
+// Anchors the ladder so that step `anchorIndex` lands on `anchorDate`, then
+// fills dates forward (future step-ups) AND backward (past steps the user
+// already moved through). This makes the tracker universal: someone already
+// on Mounjaro 15 mg picks that dose and the earlier steps simply land in the
+// past. Weekly drugs advance N*7 days per step; daily drugs N days.
+function buildSchedule(product, anchorDate, anchorIndex = 0) {
   const perStepDays = product.frequency === "weekly" ? 7 : 1;
-  const rows = [];
-  let cursor = startDate;
-  product.steps.forEach((step, i) => {
-    rows.push({ ...step, index: i, startsOn: cursor });
-    if (step.weeks !== null) {
-      cursor = addDays(cursor, step.weeks * perStepDays);
+  const rows = new Array(product.steps.length);
+
+  // Forward from the anchor (the anchor step itself starts on anchorDate).
+  let cursor = anchorDate;
+  for (let i = anchorIndex; i < product.steps.length; i++) {
+    rows[i] = { ...product.steps[i], index: i, startsOn: cursor };
+    if (product.steps[i].weeks !== null) {
+      cursor = addDays(cursor, product.steps[i].weeks * perStepDays);
     }
-  });
+  }
+  // Backward: each earlier step started its own duration before the next one.
+  cursor = anchorDate;
+  for (let i = anchorIndex - 1; i >= 0; i--) {
+    cursor = addDays(cursor, -(product.steps[i].weeks * perStepDays));
+    rows[i] = { ...product.steps[i], index: i, startsOn: cursor };
+  }
   return rows; // each row knows when it starts
 }
 
@@ -82,11 +94,34 @@ function renderProductOptions() {
   ).join("");
 }
 
+// Populate the "dose you're currently on" dropdown for the chosen product.
+function renderDoseOptions(productId, selectedIndex = 0) {
+  const product = productById(productId);
+  const sel = $("#doseLevel");
+  sel.innerHTML = product.steps
+    .map((s, i) => {
+      const label = i === 0 ? "Just starting" : (s.weeks === null ? "maintenance" : "");
+      const tag = label ? ` — ${label}` : "";
+      return `<option value="${i}">${s.dose} ${s.unit}${tag}</option>`;
+    })
+    .join("");
+  sel.value = String(selectedIndex);
+  updateDateLabel(selectedIndex);
+}
+
+// The date field means different things at step 0 vs. mid-ladder.
+function updateDateLabel(stepIndex) {
+  const label = $("#dateLabel");
+  label.textContent = Number(stepIndex) === 0
+    ? "Start date (your first dose)"
+    : "Date of your most recent dose at this level";
+}
+
 function renderAll() {
   const product = productById(state.productId);
   if (!product || !state.startDate) return;
 
-  const schedule = buildSchedule(product, state.startDate);
+  const schedule = buildSchedule(product, state.startDate, state.startStepIndex);
   const refISO = nextDoseDate(product); // dose-amount target = where you're headed next
   const curIdx = currentStepIndex(schedule, refISO);
 
@@ -145,7 +180,7 @@ function renderLog() {
 // ---- Modal ----
 function openModal() {
   const product = productById(state.productId);
-  const schedule = buildSchedule(product, state.startDate);
+  const schedule = buildSchedule(product, state.startDate, state.startStepIndex);
   const curIdx = currentStepIndex(schedule, nextDoseDate(product));
   $("#logDate").value = nextDoseDate(product) || todayISO();
   $("#logDose").value = schedule[curIdx].dose; // pre-fill with expected dose
@@ -160,19 +195,30 @@ function init() {
   load();
   renderProductOptions();
 
-  // Restore prior plan if present
-  if (state.productId) $("#product").value = state.productId;
-  if (state.startDate) $("#startDate").value = state.startDate;
-  else $("#startDate").value = todayISO();
+  // Restore prior plan if present, else default to the first product.
+  const initialProduct = state.productId || PRODUCTS[0].id;
+  $("#product").value = initialProduct;
+  renderDoseOptions(initialProduct, state.startStepIndex || 0);
+  $("#startDate").value = state.startDate || todayISO();
   if (state.productId && state.startDate) renderAll();
+
+  // Switching medication rebuilds the dose list (doses differ per drug).
+  $("#product").addEventListener("change", () => {
+    renderDoseOptions($("#product").value, 0);
+  });
+  $("#doseLevel").addEventListener("change", () => {
+    updateDateLabel($("#doseLevel").value);
+  });
 
   $("#buildPlan").addEventListener("click", () => {
     const productId = $("#product").value;
     const startDate = $("#startDate").value;
-    if (!startDate) { alert("Pick a start date first."); return; }
+    const stepIndex = parseInt($("#doseLevel").value, 10) || 0;
+    if (!startDate) { alert("Pick a date first."); return; }
     // Changing the medication resets the log to avoid mixing drugs.
     if (state.productId && state.productId !== productId) state.log = [];
     state.productId = productId;
+    state.startStepIndex = stepIndex;
     state.startDate = startDate;
     save();
     renderAll();

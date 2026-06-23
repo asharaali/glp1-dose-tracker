@@ -21,8 +21,13 @@
         <select id="product"></select>
       </div>
       <div class="field">
-        <label for="startDate">Start date (first dose)</label>
+        <label for="doseLevel">Dose you're currently on</label>
+        <select id="doseLevel"></select>
+      </div>
+      <div class="field">
+        <label for="startDate" id="dateLabel">Date of your most recent dose at this level</label>
         <input type="date" id="startDate" />
+        <small class="hint" id="dateHint">Already on a maintenance dose? Just pick it above — the schedule fills in the rest.</small>
       </div>
       <button id="buildPlan" class="primary">Build my schedule</button>
     </section>
