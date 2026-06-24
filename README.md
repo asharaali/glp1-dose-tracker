@@ -8,6 +8,19 @@ Built as a zero-dependency static site: HTML, CSS, and vanilla JavaScript, with
 all data stored locally in the browser (`localStorage`). No backend, no accounts,
 no data leaves the device.
 
+## Why it's useful
+
+- **Removes guesswork from titration** — GLP-1 doses step up on a fixed weekly/monthly ladder; the app builds the dated schedule so you always know the current step.
+- **Tracks real-world adherence** — log each actual dose against the plan, including injection site rotation and side effects.
+- **Side-effect context** — most GLP-1 nausea/GI issues happen around dose increases; seeing the schedule next to your notes makes the pattern obvious.
+- **Private by design** — everything stays in your browser; nothing is uploaded.
+
+## Who it's for
+
+- **Patients on a GLP-1** — keep one clear picture of where they are in titration and when the next step-up is due.
+- **Pharmacists & interns** — a quick reference for the standard labeled escalation across all the major products.
+- **Caregivers** — help a family member stay on schedule and track tolerability.
+
 ## Features
 
 - **Titration schedules** for the major GLP-1 / dual-agonist products:
